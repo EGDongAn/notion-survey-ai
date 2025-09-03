@@ -1,0 +1,5 @@
+{
+  "name": "Formulate AI",
+  "description": "An AI-powered web application to automatically generate Google Forms from a topic, set up email notifications, visualize key metrics on a dashboard, and analyze collected data to provide insightful reports and recommendations.",
+  "requestFramePermissions": []
+}
