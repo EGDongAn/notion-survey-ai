@@ -23,6 +23,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   const [draftName, setDraftName] = useState('');
   const [refinementPrompt, setRefinementPrompt] = useState('');
   const [category, setCategory] = useState('체험단'); // Default category
+  const [notificationEmail, setNotificationEmail] = useState(''); // Email for response notifications
 
   const generateQuestions = useCallback(async () => {
     setIsLoading(true);
@@ -75,6 +76,18 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   }, [questions]);
 
   const processFormWithNotion = useCallback(async () => {
+    // Validate notification email
+    if (!notificationEmail || !notificationEmail.trim()) {
+      setError('알림 이메일을 입력해주세요.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(notificationEmail)) {
+      setError('올바른 이메일 형식을 입력해주세요.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -318,6 +331,24 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
           />
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             비워두면 자동으로 "[{category}] {topic}" 형식으로 생성됩니다
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <Settings className="w-4 h-4 inline mr-2" />
+            알림 이메일 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={notificationEmail}
+            onChange={(e) => setNotificationEmail(e.target.value)}
+            placeholder="admin@example.com"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+            required
+          />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            새로운 응답이 제출되면 이 이메일로 알림을 받습니다
           </p>
         </div>
 

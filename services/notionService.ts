@@ -109,9 +109,17 @@ export const createNotionSurveyDatabase = async (
             type: 'created_time',
             created_time: {}
         },
+        'Name': {
+            type: 'rich_text',
+            rich_text: {}
+        },
         'Email': {
             type: 'email',
             email: {}
+        },
+        'Phone': {
+            type: 'phone_number',
+            phone_number: {}
         }
     };
 
