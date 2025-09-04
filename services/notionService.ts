@@ -89,7 +89,8 @@ export const createNotionSurveyDatabase = async (
     questions: Question[]
 ): Promise<{ databaseId: string; url: string }> => {
     if (!isNotionConfigured()) {
-        throw new Error("Notion API is not configured. Please set up NOTION_API_KEY and NOTION_DATABASE_ID in environment variables.");
+        console.error('Notion not configured - Parent Page ID:', NOTION_PARENT_PAGE_ID);
+        throw new Error("Notion API is not configured. Please set up NOTION_API_KEY and NOTION_PARENT_PAGE_ID in environment variables.");
     }
 
     // Create properties schema from questions
@@ -149,7 +150,11 @@ export const createNotionSurveyDatabase = async (
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: response.statusText }));
-            console.error('Notion API error response:', errorData);
+            console.error('Notion API error response:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorData
+            });
             throw new Error(`Failed to create Notion database: ${errorData.error || response.statusText}`);
         }
 
@@ -158,9 +163,13 @@ export const createNotionSurveyDatabase = async (
             databaseId: data.id,
             url: data.url
         };
-    } catch (error) {
-        console.error('Error creating Notion database:', error);
-        throw new Error('Failed to create survey database in Notion');
+    } catch (error: any) {
+        console.error('Error creating Notion database:', {
+            title,
+            error: error.message,
+            stack: error.stack
+        });
+        throw error; // Re-throw original error for better debugging
     }
 };
 
@@ -290,7 +299,8 @@ export const getNotionDatabaseSchema = async (
     }
 
     try {
-        const response = await fetch(`${NOTION_API_URL}?path=database&databaseId=${databaseId}`, {
+        console.log('Fetching database schema for:', databaseId);
+        const response = await fetch(`${NOTION_API_URL}?path=databases&databaseId=${databaseId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -298,7 +308,9 @@ export const getNotionDatabaseSchema = async (
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch database schema: ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({ error: response.statusText }));
+            console.error('Failed to fetch database schema:', errorData);
+            throw new Error(errorData.error || `Failed to fetch database schema: ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -348,9 +360,13 @@ export const getNotionDatabaseSchema = async (
         });
 
         return questions;
-    } catch (error) {
-        console.error('Error fetching database schema:', error);
-        throw new Error('Failed to fetch survey structure from Notion');
+    } catch (error: any) {
+        console.error('Error fetching database schema:', {
+            databaseId,
+            error: error.message,
+            stack: error.stack
+        });
+        throw new Error(`Failed to fetch survey structure from Notion: ${error.message}`);
     }
 };
 
