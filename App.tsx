@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import NotionFormGenerator from './components/NotionFormGenerator';
 import Dashboard from './components/Dashboard';
+import PublicSurvey from './PublicSurvey';
 import type { View } from './types';
 import { isNotionConfigured } from './services/notionService';
 import { isGeminiConfigured } from './services/geminiService';
@@ -58,9 +59,18 @@ const App: React.FC = () => {
   const [selectedFormIdForDashboard, setSelectedFormIdForDashboard] = useState<string | null>(null);
   const [missingVars, setMissingVars] = useState<string[]>([]);
   const [isCheckingConfig, setIsCheckingConfig] = useState<boolean>(true);
+  const [isPublicSurvey, setIsPublicSurvey] = useState<boolean>(false);
 
 
   useEffect(() => {
+    // Check if this is a public survey page
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('survey') === 'true' || urlParams.get('id')) {
+      setIsPublicSurvey(true);
+      setIsCheckingConfig(false);
+      return;
+    }
+
     const checkConfig = () => {
         const missing: string[] = [];
         if (!isNotionConfigured()) {
@@ -79,6 +89,11 @@ const App: React.FC = () => {
 
   if (isCheckingConfig) {
     return <div className="min-h-screen bg-gray-100 dark:bg-gray-900" />; // Render nothing or a loader
+  }
+
+  // Show public survey page if accessed via survey link
+  if (isPublicSurvey) {
+    return <PublicSurvey />;
   }
 
   if (missingVars.length > 0) {

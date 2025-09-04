@@ -15,6 +15,8 @@ export interface Question {
   type: QuestionType;
   options?: string[];
   isRequired: boolean;
+  scaleMin?: number;
+  scaleMax?: number;
 }
 
 export enum FormStep {

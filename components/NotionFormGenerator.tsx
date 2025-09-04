@@ -379,9 +379,34 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
               </a>
             </div>
 
+            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
+              <p className="text-sm text-green-800 dark:text-green-200 mb-3">
+                <strong>Share this Survey:</strong> Use the link below to collect responses
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}?survey=true&id=${success.databaseId}&title=${encodeURIComponent(draftName || topic)}`}
+                  className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <button
+                  onClick={() => {
+                    const surveyUrl = `${window.location.origin}?survey=true&id=${success.databaseId}&title=${encodeURIComponent(draftName || topic)}`;
+                    navigator.clipboard.writeText(surveyUrl);
+                    alert('Survey link copied to clipboard!');
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Copy Link
+                </button>
+              </div>
+            </div>
+            
             <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>Next Steps:</strong> Share the form page with respondents or embed a custom form on your website that submits to the Notion database.
+                <strong>Alternative Options:</strong> You can also view responses directly in Notion or embed a custom form on your website.
               </p>
             </div>
           </div>
