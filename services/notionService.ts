@@ -78,6 +78,11 @@ const getRandomNotionColor = (): string => {
     return colors[Math.floor(Math.random() * colors.length)];
 };
 
+// Helper function to format Notion ID (remove hyphens)
+const formatNotionId = (id: string): string => {
+    return id.replace(/-/g, '');
+};
+
 // Create a new Notion database for a survey
 export const createNotionSurveyDatabase = async (
     title: string,
@@ -110,6 +115,11 @@ export const createNotionSurveyDatabase = async (
     });
 
     try {
+        // Format the page ID (remove hyphens)
+        const formattedPageId = formatNotionId(NOTION_DATABASE_ID);
+        
+        console.log('Creating Notion database with parent page:', formattedPageId);
+        
         // Make API call to create database
         const response = await fetch(`${NOTION_API_URL}?path=databases`, {
             method: 'POST',
@@ -119,7 +129,7 @@ export const createNotionSurveyDatabase = async (
             body: JSON.stringify({
                 parent: {
                     type: 'page_id',
-                    page_id: NOTION_DATABASE_ID
+                    page_id: formattedPageId
                 },
                 title: [
                     {
@@ -436,6 +446,8 @@ export const createNotionFormPage = async (
     });
 
     try {
+        const formattedPageId = formatNotionId(NOTION_DATABASE_ID);
+        
         const response = await fetch(`${NOTION_API_URL}?path=pages`, {
             method: 'POST',
             headers: {
@@ -443,7 +455,7 @@ export const createNotionFormPage = async (
             },
             body: JSON.stringify({
                 parent: {
-                    page_id: NOTION_DATABASE_ID
+                    page_id: formattedPageId
                 },
                 properties: {
                     title: [

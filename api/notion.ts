@@ -45,9 +45,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         switch (path) {
             case 'databases':
                 if (method === 'POST') {
-                    // Create a new database
-                    const database = await notion.databases.create(body);
-                    return res.status(200).json(database);
+                    try {
+                        // Validate request body
+                        if (!body || !body.parent || !body.properties) {
+                            console.error('Invalid request body:', body);
+                            return res.status(400).json({
+                                error: 'Invalid request body. Missing parent or properties.'
+                            });
+                        }
+                        
+                        console.log('Creating database with:', JSON.stringify(body, null, 2));
+                        
+                        // Create a new database
+                        const database = await notion.databases.create(body);
+                        return res.status(200).json(database);
+                    } catch (error: any) {
+                        console.error('Notion API error when creating database:', error);
+                        
+                        // Provide specific error messages
+                        if (error.code === 'object_not_found') {
+                            return res.status(404).json({
+                                error: 'Parent page not found. Please check that the page ID is correct and the integration has access to it.'
+                            });
+                        } else if (error.code === 'unauthorized') {
+                            return res.status(403).json({
+                                error: 'Unauthorized. Please ensure your Notion integration has access to the parent page.'
+                            });
+                        } else if (error.code === 'validation_error') {
+                            return res.status(400).json({
+                                error: `Validation error: ${error.message}`
+                            });
+                        }
+                        
+                        return res.status(500).json({
+                            error: error.message || 'Failed to create database',
+                            code: error.code
+                        });
+                    }
                 }
                 break;
 
