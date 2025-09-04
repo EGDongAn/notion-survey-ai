@@ -2,15 +2,16 @@ import type { Question, FormMetadata } from '../types';
 import { QuestionType } from '../types';
 
 // Parent page ID where databases will be created
-const NOTION_DATABASE_ID = import.meta.env.VITE_NOTION_DATABASE_ID;
+// Support both new and old environment variable names for backward compatibility
+const NOTION_PARENT_PAGE_ID = import.meta.env.VITE_NOTION_PARENT_PAGE_ID || import.meta.env.VITE_NOTION_DATABASE_ID;
 
 // API endpoint for Notion operations (Vercel serverless function)
 const NOTION_API_URL = '/api/notion';
 
 export const isNotionConfigured = (): boolean => {
-    // Only check for database ID on client side
+    // Only check for parent page ID on client side
     // API key is checked on server side
-    return !!NOTION_DATABASE_ID;
+    return !!NOTION_PARENT_PAGE_ID;
 };
 
 interface NotionProperty {
