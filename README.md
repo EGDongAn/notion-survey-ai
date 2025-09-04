@@ -83,14 +83,25 @@ In your Vercel project dashboard, go to Settings > Environment Variables and add
 1. **Create an Integration**:
    - Go to [https://www.notion.so/my-integrations](https://www.notion.so/my-integrations)
    - Click "New integration"
-   - Give it a name (e.g., "Formulate AI")
+   - Give it a name (e.g., "Notion Survey AI")
    - Select the workspace
    - Copy the "Internal Integration Token"
 
-2. **Share a Page with the Integration**:
-   - Create or select a page in Notion where surveys will be stored
+2. **Prepare Your Notion Structure**:
+   - Create a main page (e.g., "Notion Survey AI")
+   - Share this page with your integration
    - Click "..." menu → "Add connections" → Select your integration
    - Copy the page ID from the URL: `https://notion.so/Your-Page-Name-{PAGE_ID}`
+   
+3. **Survey Organization**:
+   Surveys will be created with categories for better organization:
+   - 체험단 (Product Testing)
+   - 고객만족도 (Customer Satisfaction)
+   - 서비스 피드백 (Service Feedback)
+   - 이벤트 (Events)
+   - 기타 (Others)
+   
+   Each survey database will be prefixed with `[Category]` for easy filtering.
 
 3. **Configure Permissions**:
    - Ensure your integration has these capabilities:

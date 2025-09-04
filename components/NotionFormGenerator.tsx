@@ -22,6 +22,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   const [success, setSuccess] = useState<{ databaseId: string; formUrl: string; databaseUrl: string } | null>(null);
   const [draftName, setDraftName] = useState('');
   const [refinementPrompt, setRefinementPrompt] = useState('');
+  const [category, setCategory] = useState('체험단'); // Default category
 
   const generateQuestions = useCallback(async () => {
     setIsLoading(true);
@@ -78,7 +79,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     setError(null);
 
     try {
-      const formTitle = draftName || `Survey - ${topic}`;
+      const formTitle = draftName || `[${category}] ${topic}`;
       
       // Check if we're in development without proper backend
       if (window.location.hostname === 'localhost' && !window.location.port.includes('3000')) {
@@ -126,7 +127,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     } finally {
       setIsLoading(false);
     }
-  }, [draftName, topic, questions]);
+  }, [draftName, topic, questions, category]);
 
   const resetForm = () => {
     setFormStep(FormStep.INPUT);
@@ -272,15 +273,39 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             <Settings className="w-4 h-4 inline mr-2" />
-            Survey Name
+            Category
+          </label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+          >
+            <option value="체험단">체험단</option>
+            <option value="고객만족도">고객만족도</option>
+            <option value="서비스 피드백">서비스 피드백</option>
+            <option value="이벤트">이벤트</option>
+            <option value="기타">기타</option>
+          </select>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            설문이 생성될 카테고리를 선택하세요
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <Settings className="w-4 h-4 inline mr-2" />
+            Survey Name (Optional)
           </label>
           <input
             type="text"
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
-            placeholder={`Survey - ${topic}`}
+            placeholder={`[${category}] ${topic}`}
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
           />
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            비워두면 자동으로 "[{category}] {topic}" 형식으로 생성됩니다
+          </p>
         </div>
 
         {error && (
