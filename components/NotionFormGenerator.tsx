@@ -153,7 +153,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     } finally {
       setIsLoading(false);
     }
-  }, [draftName, topic, questions, category]);
+  }, [draftName, topic, questions, category, notificationEmail]);
 
   const resetForm = () => {
     setFormStep(FormStep.INPUT);
