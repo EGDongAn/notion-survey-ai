@@ -23,19 +23,16 @@ interface NotionPage {
 
 // Convert our Question type to Notion database properties
 const questionToNotionProperty = (question: Question): NotionProperty => {
-    const baseProperty: NotionProperty = {
-        name: question.questionText,
-        required: question.isRequired
-    };
-
     switch (question.type) {
         case QuestionType.TEXT:
-            return { ...baseProperty, type: 'rich_text' };
         case QuestionType.PARAGRAPH_TEXT:
-            return { ...baseProperty, type: 'rich_text' };
+        case QuestionType.TIME: // Notion doesn't have time-only type
+            return {
+                type: 'rich_text',
+                rich_text: {}
+            };
         case QuestionType.MULTIPLE_CHOICE:
             return {
-                ...baseProperty,
                 type: 'select',
                 select: {
                     options: (question.options || []).map(opt => ({
@@ -46,7 +43,6 @@ const questionToNotionProperty = (question: Question): NotionProperty => {
             };
         case QuestionType.CHECKBOX:
             return {
-                ...baseProperty,
                 type: 'multi_select',
                 multi_select: {
                     options: (question.options || []).map(opt => ({
@@ -57,18 +53,21 @@ const questionToNotionProperty = (question: Question): NotionProperty => {
             };
         case QuestionType.SCALE:
             return {
-                ...baseProperty,
                 type: 'number',
                 number: {
                     format: 'number'
                 }
             };
         case QuestionType.DATE:
-            return { ...baseProperty, type: 'date' };
-        case QuestionType.TIME:
-            return { ...baseProperty, type: 'rich_text' }; // Notion doesn't have time-only type
+            return {
+                type: 'date',
+                date: {}
+            };
         default:
-            return { ...baseProperty, type: 'rich_text' };
+            return {
+                type: 'rich_text',
+                rich_text: {}
+            };
     }
 };
 
