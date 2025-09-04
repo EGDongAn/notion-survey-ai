@@ -44,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Route handlers based on path
         switch (path) {
             case 'databases':
+            case 'database': // Support both for backward compatibility
                 if (method === 'POST') {
                     try {
                         // Validate request body

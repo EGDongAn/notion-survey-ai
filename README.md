@@ -41,10 +41,13 @@ cp .env.example .env.local
 4. Edit `.env.local` with your credentials:
 ```env
 # Notion Parent Page ID (where survey databases will be created)
-VITE_NOTION_DATABASE_ID=your_notion_parent_page_id_here
+VITE_NOTION_PARENT_PAGE_ID=your_notion_parent_page_id_here
 
 # Google Gemini API Key (for AI question generation)
 VITE_API_KEY=your_gemini_api_key_here
+
+# Legacy support (deprecated, use VITE_NOTION_PARENT_PAGE_ID instead)
+# VITE_NOTION_DATABASE_ID=your_notion_parent_page_id_here
 ```
 
 ## Development
@@ -72,8 +75,9 @@ npm run build
 In your Vercel project dashboard, go to Settings > Environment Variables and add:
 
 #### Client-side Variables:
-- `VITE_NOTION_DATABASE_ID`: Your Notion parent page ID
+- `VITE_NOTION_PARENT_PAGE_ID`: Your Notion parent page ID (where databases will be created)
 - `VITE_API_KEY`: Your Gemini API Key
+- `VITE_NOTION_DATABASE_ID`: (Deprecated) Legacy support, use VITE_NOTION_PARENT_PAGE_ID instead
 
 #### Server-side Variable:
 - `NOTION_API_KEY`: Your Notion Integration Token (keep this server-side only for security)

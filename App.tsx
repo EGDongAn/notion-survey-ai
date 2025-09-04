@@ -64,8 +64,8 @@ const App: React.FC = () => {
     const checkConfig = () => {
         const missing: string[] = [];
         if (!isNotionConfigured()) {
-            missing.push('VITE_NOTION_DATABASE_ID');
-            missing.push('NOTION_API_KEY (server-side)');
+            missing.push('VITE_NOTION_PARENT_PAGE_ID (or VITE_NOTION_DATABASE_ID for legacy)');
+            missing.push('NOTION_API_KEY (server-side in Vercel)');
         }
         if (!isGeminiConfigured()) {
             missing.push('VITE_API_KEY');

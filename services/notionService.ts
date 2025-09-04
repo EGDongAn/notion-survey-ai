@@ -115,7 +115,7 @@ export const createNotionSurveyDatabase = async (
 
     try {
         // Format the page ID (remove hyphens)
-        const formattedPageId = formatNotionId(NOTION_DATABASE_ID);
+        const formattedPageId = formatNotionId(NOTION_PARENT_PAGE_ID);
         
         console.log('Creating Notion database with parent page:', formattedPageId);
         
@@ -445,7 +445,7 @@ export const createNotionFormPage = async (
     });
 
     try {
-        const formattedPageId = formatNotionId(NOTION_DATABASE_ID);
+        const formattedPageId = formatNotionId(NOTION_PARENT_PAGE_ID);
         
         const response = await fetch(`${NOTION_API_URL}?path=pages`, {
             method: 'POST',
