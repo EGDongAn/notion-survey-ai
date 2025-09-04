@@ -109,6 +109,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             code: error.code
                         });
                     }
+                } else {
+                    return res.status(405).json({
+                        error: `Method ${method} not allowed for pages endpoint`
+                    });
                 }
                 break;
 
@@ -121,6 +125,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         ...body
                     });
                     return res.status(200).json(response);
+                } else {
+                    return res.status(405).json({
+                        error: `Method ${method} not allowed for query endpoint`
+                    });
                 }
                 break;
 
@@ -141,6 +149,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             code: error.code
                         });
                     }
+                } else {
+                    return res.status(405).json({
+                        error: `Method ${method} not allowed for database endpoint`
+                    });
                 }
                 break;
 
@@ -192,8 +204,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 });
         }
 
-        return res.status(405).json({
-            error: 'Method not allowed'
+        // This should never be reached as all cases should return
+        return res.status(500).json({
+            error: 'Unexpected error in API routing'
         });
 
     } catch (error: any) {
