@@ -7,15 +7,25 @@ Cloudflare Pages 대시보드에서 다음 환경 변수를 설정해야 합니�
 1. **Cloudflare 대시보드** 접속
 2. **Workers & Pages** → 프로젝트 선택
 3. **Settings** → **Environment variables** 탭
-4. 다음 변수들 추가:
+4. **Production**과 **Preview** 환경 모두에 다음 변수들 추가:
 
+### Functions 환경 변수 (서버사이드)
 ```
 NOTION_API_KEY = secret_xxx...  # Notion Integration 키
-NOTION_PARENT_PAGE_ID = 26344b48ad1780e19a39c787e5f1f7c4  # 부모 페이지 ID
+NOTION_PARENT_PAGE_ID = 26344b48ad1780e19a39c787e5f1f7c4  # 부모 페이지 ID (하이픈 포함 가능)
 NOTION_VERSION = 2022-06-28  # Notion API 버전
-VITE_GEMINI_API_KEY = xxx...  # Gemini API 키 (프론트엔드용)
+```
+
+### 빌드 환경 변수 (프론트엔드)
+```
+VITE_GEMINI_API_KEY = xxx...  # Gemini API 키
 VITE_GOOGLE_CLIENT_ID = xxx...  # Google OAuth Client ID
 ```
+
+**중요**: 
+- 환경 변수 추가 후 **재배포**가 필요합니다
+- Production과 Preview 환경 모두에 설정해야 합니다
+- 변수명은 대소문자를 정확히 구분합니다
 
 ## 배포 방법
 

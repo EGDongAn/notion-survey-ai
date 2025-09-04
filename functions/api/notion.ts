@@ -26,11 +26,37 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
+  // Health check endpoint
+  if (path === 'health') {
+    return new Response(JSON.stringify({
+      status: 'ok',
+      environment: {
+        hasNotionKey: !!env.NOTION_API_KEY,
+        hasParentId: !!env.NOTION_PARENT_PAGE_ID,
+        hasVersion: !!env.NOTION_VERSION,
+        notionVersion: env.NOTION_VERSION || '2022-06-28'
+      },
+      timestamp: new Date().toISOString()
+    }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
   // Check environment variables
   if (!env.NOTION_API_KEY) {
-    return new Response('Notion API key not configured', { 
+    return new Response(JSON.stringify({
+      error: 'Notion API key not configured',
+      debug: 'Set NOTION_API_KEY in environment variables'
+    }), { 
       status: 500,
-      headers: corsHeaders 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -82,18 +108,38 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
+  // Debug: Log environment variable status
+  console.log('Environment check:', {
+    hasNotionKey: !!env.NOTION_API_KEY,
+    hasParentId: !!env.NOTION_PARENT_PAGE_ID,
+    hasVersion: !!env.NOTION_VERSION,
+    path: path
+  });
+
   // Check environment variables
   if (!env.NOTION_API_KEY) {
-    return new Response('Notion API key not configured', { 
+    return new Response(JSON.stringify({ 
+      error: 'Notion API key not configured',
+      debug: 'Please set NOTION_API_KEY in Cloudflare Pages environment variables'
+    }), { 
       status: 500,
-      headers: corsHeaders 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
   if (!env.NOTION_PARENT_PAGE_ID && path === 'databases') {
-    return new Response('Notion parent page ID not configured', { 
+    return new Response(JSON.stringify({ 
+      error: 'Notion parent page ID not configured',
+      debug: 'Please set NOTION_PARENT_PAGE_ID in Cloudflare Pages environment variables'
+    }), { 
       status: 500,
-      headers: corsHeaders 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
