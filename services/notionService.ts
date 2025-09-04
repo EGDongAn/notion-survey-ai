@@ -22,6 +22,12 @@ interface NotionPage {
     properties: NotionProperty;
 }
 
+// Sanitize option names for Notion (commas are not allowed)
+const sanitizeOptionName = (name: string): string => {
+    // Replace commas with semicolons or remove them
+    return name.replace(/,/g, ';');
+};
+
 // Convert our Question type to Notion database properties
 const questionToNotionProperty = (question: Question): NotionProperty => {
     switch (question.type) {
@@ -37,7 +43,7 @@ const questionToNotionProperty = (question: Question): NotionProperty => {
                 type: 'select',
                 select: {
                     options: (question.options || []).map(opt => ({
-                        name: opt,
+                        name: sanitizeOptionName(opt),
                         color: getRandomNotionColor()
                     }))
                 }
@@ -47,7 +53,7 @@ const questionToNotionProperty = (question: Question): NotionProperty => {
                 type: 'multi_select',
                 multi_select: {
                     options: (question.options || []).map(opt => ({
-                        name: opt,
+                        name: sanitizeOptionName(opt),
                         color: getRandomNotionColor()
                     }))
                 }
@@ -111,7 +117,8 @@ export const createNotionSurveyDatabase = async (
 
     // Add each question as a property
     questions.forEach((question, index) => {
-        const propertyName = `Q${index + 1}: ${question.questionText}`;
+        // Sanitize property name to avoid Notion API issues
+        const propertyName = `Q${index + 1}: ${sanitizeOptionName(question.questionText)}`;
         properties[propertyName] = questionToNotionProperty(question);
     });
 

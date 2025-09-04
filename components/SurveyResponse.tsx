@@ -17,6 +17,11 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Sanitize property names (same as in notionService)
+  const sanitizePropertyName = (name: string): string => {
+    return name.replace(/,/g, ';');
+  };
+
   useEffect(() => {
     loadSurveyQuestions();
   }, [databaseId]);
@@ -36,7 +41,7 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
 
   const handleInputChange = (questionIndex: number, value: any) => {
     const question = questions[questionIndex];
-    const key = `Q${questionIndex + 1}: ${question.questionText}`;
+    const key = `Q${questionIndex + 1}: ${sanitizePropertyName(question.questionText)}`;
     setResponses(prev => ({
       ...prev,
       [key]: value
@@ -49,7 +54,7 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
     // Validate required fields
     const missingRequired = questions.filter((q, i) => {
       if (!q.isRequired) return false;
-      const key = `Q${i + 1}: ${q.questionText}`;
+      const key = `Q${i + 1}: ${sanitizePropertyName(q.questionText)}`;
       return !responses[key] || (Array.isArray(responses[key]) && responses[key].length === 0);
     });
 
@@ -81,7 +86,7 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
   };
 
   const renderQuestionInput = (question: Question, index: number) => {
-    const key = `Q${index + 1}: ${question.questionText}`;
+    const key = `Q${index + 1}: ${sanitizePropertyName(question.questionText)}`;
     const value = responses[key] || '';
 
     switch (question.type) {
