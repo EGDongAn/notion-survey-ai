@@ -80,6 +80,12 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     try {
       const formTitle = draftName || `Survey - ${topic}`;
       
+      // Check if we're in development without proper backend
+      if (window.location.hostname === 'localhost' && !window.location.port.includes('3000')) {
+        setError('Local development detected. Please deploy to Vercel or use "vercel dev" for local testing. See LOCAL_DEVELOPMENT.md for details.');
+        return;
+      }
+      
       // Create Notion database for the survey
       const { databaseId, url: databaseUrl } = await createNotionSurveyDatabase(formTitle, questions);
       
@@ -104,7 +110,19 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
       });
       setFormStep(FormStep.SUCCESS);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create form in Notion');
+      console.error('Error creating form:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create form in Notion';
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('500') || errorMessage.includes('API key not configured')) {
+        setError('Notion API is not configured. Please ensure NOTION_API_KEY is set in Vercel environment variables.');
+      } else if (errorMessage.includes('400')) {
+        setError('Invalid request. Please check that VITE_NOTION_DATABASE_ID is a valid Notion page ID and the page is shared with your integration.');
+      } else if (errorMessage.includes('403')) {
+        setError('Permission denied. Please ensure your Notion integration has access to the parent page.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -16,7 +16,10 @@ const corsHeaders = {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-        return res.status(200).setHeaders(corsHeaders).end();
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+            res.setHeader(key, value);
+        });
+        return res.status(200).end();
     }
 
     // Set CORS headers for all responses
@@ -28,10 +31,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { method, body, query } = req;
         const path = (query.path as string) || '';
 
+        console.log('Notion API Request:', { method, path, body });
+
         // Check if Notion API key is configured
         if (!process.env.NOTION_API_KEY) {
+            console.error('Notion API key not configured');
             return res.status(500).json({
-                error: 'Notion API key not configured'
+                error: 'Notion API key not configured. Please set NOTION_API_KEY environment variable in Vercel.'
             });
         }
 
