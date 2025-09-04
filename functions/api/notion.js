@@ -20,21 +20,38 @@ export async function onRequestGet(context) {
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
-  // Health check endpoint
+  // Health check endpoint with detailed debugging
   if (path === 'health') {
+    // Check all possible ways environment variables might be available
+    const envCheck = {
+      direct: {
+        NOTION_API_KEY: !!env.NOTION_API_KEY,
+        NOTION_PARENT_PAGE_ID: !!env.NOTION_PARENT_PAGE_ID,
+        NOTION_VERSION: !!env.NOTION_VERSION,
+      },
+      count: Object.keys(env || {}).length,
+      keys: Object.keys(env || {}).filter(k => 
+        !k.toLowerCase().includes('key') && 
+        !k.toLowerCase().includes('secret') &&
+        !k.toLowerCase().includes('token')
+      ),
+      context: {
+        hasEnv: !!env,
+        envType: typeof env,
+      }
+    };
+
     return new Response(JSON.stringify({
       status: 'ok',
       environment: {
         hasNotionKey: !!env.NOTION_API_KEY,
         hasParentId: !!env.NOTION_PARENT_PAGE_ID,
         hasVersion: !!env.NOTION_VERSION,
-        notionVersion: env.NOTION_VERSION || '2022-06-28',
-        // Debug info
-        envVarCount: Object.keys(env).length,
-        envKeys: Object.keys(env).filter(k => !k.toLowerCase().includes('key') && !k.toLowerCase().includes('secret'))
+        notionVersion: env.NOTION_VERSION || '2022-06-28'
       },
+      debug: envCheck,
       timestamp: new Date().toISOString()
-    }), {
+    }, null, 2), {
       status: 200,
       headers: {
         ...corsHeaders,
@@ -47,9 +64,13 @@ export async function onRequestGet(context) {
   if (!env.NOTION_API_KEY) {
     return new Response(JSON.stringify({
       error: 'Notion API key not configured',
-      debug: 'Set NOTION_API_KEY in Cloudflare Pages environment variables',
-      availableKeys: Object.keys(env).length
-    }), { 
+      debug: {
+        message: 'Set NOTION_API_KEY in Cloudflare Pages environment variables',
+        hasEnv: !!env,
+        envKeys: Object.keys(env || {}),
+        help: 'Go to Cloudflare Dashboard > Workers & Pages > Your Project > Settings > Environment variables'
+      }
+    }, null, 2), { 
       status: 500,
       headers: {
         ...corsHeaders,
@@ -89,7 +110,10 @@ export async function onRequestGet(context) {
     });
   } catch (error) {
     console.error('Notion API error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      details: error.message 
+    }), {
       status: 500,
       headers: {
         ...corsHeaders,
@@ -107,20 +131,33 @@ export async function onRequestPost(context) {
   const databaseId = url.searchParams.get('databaseId');
 
   // Debug logging
-  console.log('POST request:', {
+  console.log('POST request environment check:', {
     path,
     hasApiKey: !!env.NOTION_API_KEY,
     hasParentId: !!env.NOTION_PARENT_PAGE_ID,
-    envKeys: Object.keys(env)
+    envCount: Object.keys(env || {}).length
   });
 
-  // Check environment variables
+  // Check environment variables with detailed error
   if (!env.NOTION_API_KEY) {
     return new Response(JSON.stringify({ 
       error: 'Notion API key not configured',
-      debug: 'Please set NOTION_API_KEY in Cloudflare Pages environment variables',
-      hint: 'Make sure to add it in Settings > Environment variables > Production'
-    }), { 
+      debug: {
+        message: 'NOTION_API_KEY is missing from environment variables',
+        instructions: [
+          '1. Go to Cloudflare Dashboard',
+          '2. Navigate to Workers & Pages > notion-survey-ai',
+          '3. Go to Settings > Environment variables',
+          '4. Add NOTION_API_KEY in both Production and Preview',
+          '5. Save and redeploy'
+        ],
+        currentEnv: {
+          hasEnv: !!env,
+          keyCount: Object.keys(env || {}).length,
+          availableKeys: Object.keys(env || {}).filter(k => !k.includes('KEY'))
+        }
+      }
+    }, null, 2), { 
       status: 500,
       headers: {
         ...corsHeaders,
@@ -132,8 +169,11 @@ export async function onRequestPost(context) {
   if (!env.NOTION_PARENT_PAGE_ID && path === 'databases') {
     return new Response(JSON.stringify({ 
       error: 'Notion parent page ID not configured',
-      debug: 'Please set NOTION_PARENT_PAGE_ID in Cloudflare Pages environment variables'
-    }), { 
+      debug: {
+        message: 'NOTION_PARENT_PAGE_ID is missing',
+        instructions: 'Add NOTION_PARENT_PAGE_ID to environment variables'
+      }
+    }, null, 2), { 
       status: 500,
       headers: {
         ...corsHeaders,
@@ -181,9 +221,15 @@ export async function onRequestPost(context) {
         break;
         
       default:
-        return new Response('Invalid path', { 
+        return new Response(JSON.stringify({
+          error: 'Invalid path',
+          validPaths: ['databases', 'pages', 'query', 'health']
+        }), { 
           status: 400,
-          headers: corsHeaders 
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
         });
     }
 
@@ -204,7 +250,7 @@ export async function onRequestPost(context) {
     if (!response.ok) {
       console.error('Notion API error:', {
         status: response.status,
-        data: data
+        data: data.substring(0, 500) // First 500 chars for debugging
       });
     }
 
@@ -219,8 +265,9 @@ export async function onRequestPost(context) {
     console.error('Function error:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      details: error.message 
-    }), {
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 3) // First 3 lines of stack
+    }, null, 2), {
       status: 500,
       headers: {
         ...corsHeaders,
@@ -237,9 +284,14 @@ export async function onRequestPatch(context) {
   const databaseId = url.searchParams.get('databaseId');
 
   if (!env.NOTION_API_KEY) {
-    return new Response('Notion API key not configured', { 
+    return new Response(JSON.stringify({
+      error: 'Notion API key not configured'
+    }), { 
       status: 500,
-      headers: corsHeaders 
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -272,7 +324,10 @@ export async function onRequestPatch(context) {
     });
   } catch (error) {
     console.error('Notion API error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      message: error.message
+    }), {
       status: 500,
       headers: {
         ...corsHeaders,
