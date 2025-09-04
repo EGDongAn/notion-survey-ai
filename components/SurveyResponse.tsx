@@ -149,14 +149,22 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
       setIsSubmitting(true);
       setErrorMessage('');
       
-      // Add respondent information (format phone number)
-      const finalResponses = { 
-        ...responses,
-        'Name': responses.respondentName,
-        'Email': responses.respondentEmail,
-        'Phone': formatPhone(responses.respondentPhone)
-      };
+      // Prepare final responses object with only the survey answers
+      const finalResponses: Record<string, any> = {};
+      
+      // Add respondent information with proper field names
+      finalResponses['Name'] = responses.respondentName;
+      finalResponses['Email'] = responses.respondentEmail;
+      finalResponses['Phone'] = formatPhone(responses.respondentPhone);
+      
+      // Add all question responses (already in correct format Q1:, Q2:, etc.)
+      Object.keys(responses).forEach(key => {
+        if (key.startsWith('Q') && key.includes(':')) {
+          finalResponses[key] = responses[key];
+        }
+      });
 
+      console.log('Final responses to submit:', finalResponses);
       await submitNotionResponse(databaseId, finalResponses);
       setSubmitStatus('success');
       setResponses({});

@@ -211,17 +211,22 @@ export const submitNotionResponse = async (
                     }
                 }
             ]
-        },
-        'Submitted At': {
-            date: {
-                start: new Date().toISOString()
-            }
         }
+        // Note: 'Submitted At' is automatically handled by Notion as created_time
     };
 
     // Map responses to Notion properties
     Object.entries(responses).forEach(([key, value]) => {
-        if (typeof value === 'string') {
+        // Skip system properties that are automatically handled
+        if (key === 'Submitted At' || key === 'respondentName' || key === 'respondentEmail' || key === 'respondentPhone') {
+            return; // These are handled separately below
+        }
+        
+        // Handle different value types
+        if (value === null || value === undefined || value === '') {
+            // Skip empty values
+            return;
+        } else if (typeof value === 'string') {
             properties[key] = {
                 rich_text: [
                     {
@@ -236,9 +241,12 @@ export const submitNotionResponse = async (
                 number: value
             };
         } else if (Array.isArray(value)) {
-            properties[key] = {
-                multi_select: value.map(v => ({ name: v }))
-            };
+            // For multi-select fields (like checkboxes)
+            if (value.length > 0) {
+                properties[key] = {
+                    multi_select: value.map(v => ({ name: String(v) }))
+                };
+            }
         } else if (value instanceof Date) {
             properties[key] = {
                 date: {
@@ -249,21 +257,27 @@ export const submitNotionResponse = async (
     });
 
     try {
+        const requestBody = {
+            parent: {
+                database_id: databaseId
+            },
+            properties: properties
+        };
+        
+        console.log('Submitting to Notion:', JSON.stringify(requestBody, null, 2));
+        
         const response = await fetch(`${NOTION_API_URL}?path=pages`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                parent: {
-                    database_id: databaseId
-                },
-                properties: properties
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to submit response: ${response.statusText}`);
+            const errorText = await response.text();
+            console.error('Notion API Error:', errorText);
+            throw new Error(`Failed to submit response: ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();

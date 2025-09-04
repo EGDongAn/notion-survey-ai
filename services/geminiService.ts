@@ -96,7 +96,14 @@ export const generateFormQuestions = async (topic: string): Promise<Question[]> 
     try {
         const response = await getAi().models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Generate a comprehensive and high-quality list of about 8-10 survey questions for a Google Form about "${topic}". The questions should cover a variety of types (TEXT, PARAGRAPH_TEXT, MULTIPLE_CHOICE, CHECKBOX, SCALE) to gather diverse feedback. Ensure the questions are clear, unbiased, and relevant to the topic.`,
+            contents: `Generate a comprehensive and high-quality list of about 8-10 survey questions for a Google Form about "${topic}". The questions should cover a variety of types (TEXT, PARAGRAPH_TEXT, MULTIPLE_CHOICE, CHECKBOX, SCALE) to gather diverse feedback. Ensure the questions are clear, unbiased, and relevant to the topic.
+            
+IMPORTANT: Do NOT include questions asking for:
+- Name (이름)
+- Email (이메일) 
+- Phone number (전화번호)
+- Personal contact information
+These will be collected separately at the beginning of the survey.`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: formSchema,
@@ -107,8 +114,21 @@ export const generateFormQuestions = async (topic: string): Promise<Question[]> 
         const parsed = parseCleanJson(rawText);
         
         if (parsed && Array.isArray(parsed.questions)) {
-            // Validate that question types are valid enums
-            return parsed.questions.filter((q: any) => questionTypeValues.includes(q.type));
+            // Validate that question types are valid enums and filter out personal info questions
+            return parsed.questions.filter((q: any) => {
+                // Check if question type is valid
+                if (!questionTypeValues.includes(q.type)) return false;
+                
+                // Filter out questions asking for name, email, or phone
+                const lowerText = q.questionText.toLowerCase();
+                const personalInfoKeywords = [
+                    '이름', 'name', '성함', '성명',
+                    '이메일', 'email', 'e-mail', '메일',
+                    '전화', 'phone', '연락처', 'tel', '휴대폰', '핸드폰'
+                ];
+                
+                return !personalInfoKeywords.some(keyword => lowerText.includes(keyword));
+            });
         }
         
         throw new Error("Failed to parse questions from AI response.");
