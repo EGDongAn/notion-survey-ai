@@ -20,13 +20,18 @@ export async function onRequestGet(context) {
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
+  // Get environment variables with fallbacks for VITE_ prefix
+  const NOTION_API_KEY = env.NOTION_API_KEY;
+  const NOTION_PARENT_PAGE_ID = env.NOTION_PARENT_PAGE_ID || env.VITE_NOTION_PARENT_PAGE_ID;
+  const NOTION_VERSION = env.NOTION_VERSION || '2022-06-28';
+
   // Health check endpoint with detailed debugging
   if (path === 'health') {
     // Check all possible ways environment variables might be available
     const envCheck = {
       direct: {
-        NOTION_API_KEY: !!env.NOTION_API_KEY,
-        NOTION_PARENT_PAGE_ID: !!env.NOTION_PARENT_PAGE_ID,
+        NOTION_API_KEY: !!NOTION_API_KEY,
+        NOTION_PARENT_PAGE_ID: !!NOTION_PARENT_PAGE_ID,
         NOTION_VERSION: !!env.NOTION_VERSION,
       },
       count: Object.keys(env || {}).length,
@@ -44,10 +49,10 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify({
       status: 'ok',
       environment: {
-        hasNotionKey: !!env.NOTION_API_KEY,
-        hasParentId: !!env.NOTION_PARENT_PAGE_ID,
+        hasNotionKey: !!NOTION_API_KEY,
+        hasParentId: !!NOTION_PARENT_PAGE_ID,
         hasVersion: !!env.NOTION_VERSION,
-        notionVersion: env.NOTION_VERSION || '2022-06-28'
+        notionVersion: NOTION_VERSION
       },
       debug: envCheck,
       timestamp: new Date().toISOString()
@@ -61,7 +66,7 @@ export async function onRequestGet(context) {
   }
 
   // Check environment variables
-  if (!env.NOTION_API_KEY) {
+  if (!NOTION_API_KEY) {
     return new Response(JSON.stringify({
       error: 'Notion API key not configured',
       debug: {
@@ -94,8 +99,8 @@ export async function onRequestGet(context) {
     const response = await fetch(notionUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${env.NOTION_API_KEY}`,
-        'Notion-Version': env.NOTION_VERSION || '2022-06-28',
+        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Notion-Version': NOTION_VERSION,
         'Content-Type': 'application/json',
       },
     });
@@ -130,16 +135,21 @@ export async function onRequestPost(context) {
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
+  // Get environment variables with fallbacks for VITE_ prefix
+  const NOTION_API_KEY = env.NOTION_API_KEY;
+  const NOTION_PARENT_PAGE_ID = env.NOTION_PARENT_PAGE_ID || env.VITE_NOTION_PARENT_PAGE_ID;
+  const NOTION_VERSION = env.NOTION_VERSION || '2022-06-28';
+
   // Debug logging
   console.log('POST request environment check:', {
     path,
-    hasApiKey: !!env.NOTION_API_KEY,
-    hasParentId: !!env.NOTION_PARENT_PAGE_ID,
+    hasApiKey: !!NOTION_API_KEY,
+    hasParentId: !!NOTION_PARENT_PAGE_ID,
     envCount: Object.keys(env || {}).length
   });
 
   // Check environment variables with detailed error
-  if (!env.NOTION_API_KEY) {
+  if (!NOTION_API_KEY) {
     return new Response(JSON.stringify({ 
       error: 'Notion API key not configured',
       debug: {
@@ -166,7 +176,7 @@ export async function onRequestPost(context) {
     });
   }
 
-  if (!env.NOTION_PARENT_PAGE_ID && path === 'databases') {
+  if (!NOTION_PARENT_PAGE_ID && path === 'databases') {
     return new Response(JSON.stringify({ 
       error: 'Notion parent page ID not configured',
       debug: {
@@ -193,7 +203,7 @@ export async function onRequestPost(context) {
         // Create a new database
         notionUrl += 'databases';
         // Ensure parent is set correctly
-        const parentPageId = env.NOTION_PARENT_PAGE_ID.replace(/-/g, '');
+        const parentPageId = NOTION_PARENT_PAGE_ID.replace(/-/g, '');
         requestBody = {
           ...body,
           parent: body.parent || {
@@ -238,8 +248,8 @@ export async function onRequestPost(context) {
     const response = await fetch(notionUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${env.NOTION_API_KEY}`,
-        'Notion-Version': env.NOTION_VERSION || '2022-06-28',
+        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Notion-Version': NOTION_VERSION,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
@@ -283,7 +293,11 @@ export async function onRequestPatch(context) {
   const url = new URL(request.url);
   const databaseId = url.searchParams.get('databaseId');
 
-  if (!env.NOTION_API_KEY) {
+  // Get environment variables with fallbacks for VITE_ prefix
+  const NOTION_API_KEY = env.NOTION_API_KEY;
+  const NOTION_VERSION = env.NOTION_VERSION || '2022-06-28';
+
+  if (!NOTION_API_KEY) {
     return new Response(JSON.stringify({
       error: 'Notion API key not configured'
     }), { 
@@ -307,8 +321,8 @@ export async function onRequestPatch(context) {
     const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${env.NOTION_API_KEY}`,
-        'Notion-Version': env.NOTION_VERSION || '2022-06-28',
+        'Authorization': `Bearer ${NOTION_API_KEY}`,
+        'Notion-Version': NOTION_VERSION,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
