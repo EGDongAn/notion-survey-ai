@@ -92,7 +92,8 @@ const formatNotionId = (id: string): string => {
 // Create a new Notion database for a survey
 export const createNotionSurveyDatabase = async (
     title: string,
-    questions: Question[]
+    questions: Question[],
+    notificationEmails?: string[]
 ): Promise<{ databaseId: string; url: string }> => {
     if (!isNotionConfigured()) {
         console.error('Notion not configured - Parent Page ID:', NOTION_PARENT_PAGE_ID);
@@ -120,6 +121,10 @@ export const createNotionSurveyDatabase = async (
         'Phone': {
             type: 'phone_number',
             phone_number: {}
+        },
+        'Notification Emails': {
+            type: 'rich_text',
+            rich_text: {}
         }
     };
 

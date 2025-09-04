@@ -35,4 +35,5 @@ export interface FormMetadata {
   analysisResult?: string;
   editUrl?: string;
   publishedUrl?: string;
+  notificationEmails?: string[];
 }

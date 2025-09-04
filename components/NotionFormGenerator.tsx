@@ -7,6 +7,8 @@ import { FormStep, QuestionType } from '../types';
 import Loader from './Loader';
 import QuestionPreview from './QuestionPreview';
 import { saveFormMetadata } from '../services/storageService';
+import NotificationEmailManager from './NotificationEmailManager';
+import { saveEmailToHistory } from '../services/emailStorageService';
 
 interface NotionFormGeneratorProps {
   setActiveView: (view: View) => void;
@@ -23,7 +25,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   const [draftName, setDraftName] = useState('');
   const [refinementPrompt, setRefinementPrompt] = useState('');
   const [category, setCategory] = useState('체험단'); // Default category
-  const [notificationEmail, setNotificationEmail] = useState(''); // Email for response notifications
+  const [notificationEmails, setNotificationEmails] = useState<string[]>([]); // Multiple emails for notifications
 
   const generateQuestions = useCallback(async () => {
     setIsLoading(true);
@@ -76,15 +78,9 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   }, [questions]);
 
   const processFormWithNotion = useCallback(async () => {
-    // Validate notification email
-    if (!notificationEmail || !notificationEmail.trim()) {
-      setError('알림 이메일을 입력해주세요.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(notificationEmail)) {
-      setError('올바른 이메일 형식을 입력해주세요.');
+    // Validate notification emails
+    if (!notificationEmails || notificationEmails.length === 0) {
+      setError('최소 하나의 알림 이메일을 추가해주세요.');
       return;
     }
 
@@ -110,7 +106,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
       }
       
       // Create Notion database for the survey
-      const { databaseId, url: databaseUrl } = await createNotionSurveyDatabase(formTitle, questions);
+      const { databaseId, url: databaseUrl } = await createNotionSurveyDatabase(formTitle, questions, notificationEmails);
       
       // Create a form page in Notion
       const { pageId, url: formUrl } = await createNotionFormPage(formTitle, questions, databaseId);
@@ -122,9 +118,13 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
         questionCount: questions.length,
         createdAt: new Date().toISOString(),
         editUrl: databaseUrl,
-        publishedUrl: formUrl
+        publishedUrl: formUrl,
+        notificationEmails: notificationEmails
       };
       saveFormMetadata(metadata);
+      
+      // Save emails to history for future use
+      saveEmailToHistory(notificationEmails);
 
       setSuccess({
         databaseId,
@@ -153,7 +153,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     } finally {
       setIsLoading(false);
     }
-  }, [draftName, topic, questions, category, notificationEmail]);
+  }, [draftName, topic, questions, category, notificationEmails]);
 
   const resetForm = () => {
     setFormStep(FormStep.INPUT);
@@ -334,23 +334,11 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
           </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Settings className="w-4 h-4 inline mr-2" />
-            알림 이메일 <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="email"
-            value={notificationEmail}
-            onChange={(e) => setNotificationEmail(e.target.value)}
-            placeholder="admin@example.com"
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-            required
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            새로운 응답이 제출되면 이 이메일로 알림을 받습니다
-          </p>
-        </div>
+        <NotificationEmailManager
+          emails={notificationEmails}
+          onEmailsChange={setNotificationEmails}
+          required={true}
+        />
 
         {error && (
           <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-500 rounded-lg flex items-start">
