@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { generateFormQuestions, refineFormQuestions } from '../services/geminiService';
 import { createNotionSurveyDatabase, createNotionFormPage } from '../services/notionService';
 import { ArrowRight, Redo, Wand2, Settings, PlusCircle, Trash2, Sparkles, CheckCircle, ExternalLink, AlertTriangle, Edit } from 'lucide-react';
@@ -7,7 +7,7 @@ import { FormStep, QuestionType } from '../types';
 import Loader from './Loader';
 import QuestionPreview from './QuestionPreview';
 import { saveFormMetadata } from '../services/storageService';
-import NotificationEmailManager from './NotificationEmailManager';
+import NotificationEmailManager, { NotificationEmailManagerHandle } from './NotificationEmailManager';
 import { saveEmailToHistory } from '../services/emailStorageService';
 
 interface NotionFormGeneratorProps {
@@ -26,6 +26,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   const [refinementPrompt, setRefinementPrompt] = useState('');
   const [category, setCategory] = useState('체험단'); // Default category
   const [notificationEmails, setNotificationEmails] = useState<string[]>([]); // Multiple emails for notifications
+  const emailManagerRef = useRef<NotificationEmailManagerHandle>(null);
 
   const generateQuestions = useCallback(async () => {
     setIsLoading(true);
@@ -78,6 +79,9 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
   }, [questions]);
 
   const processFormWithNotion = useCallback(async () => {
+    // Commit any pending email in the input field
+    emailManagerRef.current?.commitPending();
+    
     // Validate notification emails
     if (!notificationEmails || notificationEmails.length === 0) {
       setError('최소 하나의 알림 이메일을 추가해주세요.');
@@ -335,6 +339,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
         </div>
 
         <NotificationEmailManager
+          ref={emailManagerRef}
           emails={notificationEmails}
           onEmailsChange={setNotificationEmails}
           required={true}
@@ -358,6 +363,7 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
             Back
           </button>
           <button
+            type="button"
             onClick={processFormWithNotion}
             disabled={isLoading}
             className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center"

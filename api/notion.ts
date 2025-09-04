@@ -29,7 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const { method, body, query } = req;
-        const path = (query.path as string) || '';
+        const rawPath = String(query.path || '').toLowerCase();
+        // Support both 'database' and 'databases' for compatibility
+        const path = rawPath === 'database' ? 'databases' : rawPath;
 
         console.log('Notion API Request:', { 
             method, 
@@ -117,6 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     }
                 } else {
                     console.error('Invalid request for databases endpoint:', { method, hasDbId: !!query.databaseId });
+                    res.setHeader('Allow', 'GET, POST, OPTIONS');
                     return res.status(405).json({
                         error: `Method ${method} not allowed for ${path} endpoint. Expected POST for creation or GET with databaseId for retrieval.`
                     });
@@ -138,6 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         });
                     }
                 } else {
+                    res.setHeader('Allow', 'POST, OPTIONS');
                     return res.status(405).json({
                         error: `Method ${method} not allowed for pages endpoint`
                     });
@@ -154,6 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     });
                     return res.status(200).json(response);
                 } else {
+                    res.setHeader('Allow', 'POST, OPTIONS');
                     return res.status(405).json({
                         error: `Method ${method} not allowed for query endpoint`
                     });

@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { X, Plus, Mail, Clock, Star } from 'lucide-react';
 import { getFrequentEmails } from '../services/emailStorageService';
+
+export type NotificationEmailManagerHandle = { 
+  commitPending: () => void;
+};
 
 interface NotificationEmailManagerProps {
   emails: string[];
@@ -8,11 +12,10 @@ interface NotificationEmailManagerProps {
   required?: boolean;
 }
 
-const NotificationEmailManager: React.FC<NotificationEmailManagerProps> = ({ 
-  emails, 
-  onEmailsChange,
-  required = false 
-}) => {
+const NotificationEmailManager = forwardRef<NotificationEmailManagerHandle, NotificationEmailManagerProps>((
+  { emails, onEmailsChange, required = false },
+  ref
+) => {
   const [inputEmail, setInputEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [frequentEmails, setFrequentEmails] = useState<string[]>([]);
@@ -63,12 +66,35 @@ const NotificationEmailManager: React.FC<NotificationEmailManagerProps> = ({
     setShowSuggestions(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addEmail();
     }
   };
+
+  const handleBlur = () => {
+    const trimmedEmail = inputEmail.trim().toLowerCase();
+    if (trimmedEmail && validateEmail(trimmedEmail) && !emails.includes(trimmedEmail)) {
+      onEmailsChange([...emails, trimmedEmail]);
+      setInputEmail('');
+      setEmailError('');
+      setShowSuggestions(false);
+    }
+  };
+
+  // Expose commitPending method to parent
+  useImperativeHandle(ref, () => ({
+    commitPending() {
+      const trimmedEmail = inputEmail.trim().toLowerCase();
+      if (trimmedEmail && validateEmail(trimmedEmail) && !emails.includes(trimmedEmail)) {
+        onEmailsChange([...emails, trimmedEmail]);
+        setInputEmail('');
+        setEmailError('');
+        setShowSuggestions(false);
+      }
+    }
+  }));
 
   // Filter suggestions based on input
   const filteredSuggestions = frequentEmails.filter(
@@ -88,6 +114,9 @@ const NotificationEmailManager: React.FC<NotificationEmailManagerProps> = ({
         <div className="flex gap-2">
           <input
             type="email"
+            name="notificationEmail"
+            autoComplete="email"
+            inputMode="email"
             value={inputEmail}
             onChange={(e) => {
               setInputEmail(e.target.value);
@@ -95,7 +124,8 @@ const NotificationEmailManager: React.FC<NotificationEmailManagerProps> = ({
               setShowSuggestions(true);
             }}
             onFocus={() => setShowSuggestions(true)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
             placeholder="알림 받을 이메일 주소"
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -172,6 +202,8 @@ const NotificationEmailManager: React.FC<NotificationEmailManagerProps> = ({
       </p>
     </div>
   );
-};
+});
+
+NotificationEmailManager.displayName = 'NotificationEmailManager';
 
 export default NotificationEmailManager;

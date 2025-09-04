@@ -64,7 +64,7 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
     if (!responses.respondentPhone || responses.respondentPhone.trim() === '') {
       errors.push('전화번호를 입력해주세요.');
     } else if (!validatePhone(responses.respondentPhone)) {
-      errors.push('올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)');
+      errors.push('올바른 휴대폰 번호를 입력해주세요. (01X-XXXX-XXXX)');
     }
     
     setValidationErrors(errors);
@@ -77,8 +77,19 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
   };
 
   const validatePhone = (phone: string): boolean => {
-    const re = /^\d{3}-\d{3,4}-\d{4}$/;
-    return re.test(phone);
+    // Remove all non-digits and check if it's a valid Korean mobile number
+    const normalized = phone.replace(/\D/g, '');
+    return /^01[0-9]\d{7,8}$/.test(normalized);
+  };
+
+  const formatPhone = (phone: string): string => {
+    const normalized = phone.replace(/\D/g, '');
+    if (normalized.length === 10) {
+      return `${normalized.slice(0, 3)}-${normalized.slice(3, 6)}-${normalized.slice(6)}`;
+    } else if (normalized.length === 11) {
+      return `${normalized.slice(0, 3)}-${normalized.slice(3, 7)}-${normalized.slice(7)}`;
+    }
+    return phone;
   };
 
   const handleNextStep = () => {
@@ -138,12 +149,12 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
       setIsSubmitting(true);
       setErrorMessage('');
       
-      // Add respondent information
+      // Add respondent information (format phone number)
       const finalResponses = { 
         ...responses,
         'Name': responses.respondentName,
         'Email': responses.respondentEmail,
-        'Phone': responses.respondentPhone
+        'Phone': formatPhone(responses.respondentPhone)
       };
 
       await submitNotionResponse(databaseId, finalResponses);
@@ -440,7 +451,7 @@ const SurveyResponse: React.FC<SurveyResponseProps> = ({ databaseId, title }) =>
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  형식: 010-0000-0000
+                  하이픈(-) 없이 입력해도 됩니다 (예: 01012345678)
                 </p>
               </div>
             </div>
