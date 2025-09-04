@@ -97,9 +97,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             case 'pages':
                 if (method === 'POST') {
-                    // Create a new page (for form responses)
-                    const page = await notion.pages.create(body);
-                    return res.status(200).json(page);
+                    try {
+                        // Create a new page (for form responses)
+                        console.log('Creating page with:', JSON.stringify(body, null, 2));
+                        const page = await notion.pages.create(body);
+                        return res.status(200).json(page);
+                    } catch (error: any) {
+                        console.error('Error creating page:', error);
+                        return res.status(error.status || 500).json({
+                            error: error.message || 'Failed to create page',
+                            code: error.code
+                        });
+                    }
                 }
                 break;
 
@@ -117,12 +126,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             case 'database':
                 if (method === 'GET' && query.databaseId) {
-                    // Get database schema
-                    const databaseId = query.databaseId as string;
-                    const database = await notion.databases.retrieve({
-                        database_id: databaseId
-                    });
-                    return res.status(200).json(database);
+                    try {
+                        // Get database schema
+                        const databaseId = query.databaseId as string;
+                        console.log('Retrieving database schema for:', databaseId);
+                        const database = await notion.databases.retrieve({
+                            database_id: databaseId
+                        });
+                        return res.status(200).json(database);
+                    } catch (error: any) {
+                        console.error('Error retrieving database:', error);
+                        return res.status(error.status || 500).json({
+                            error: error.message || 'Failed to retrieve database',
+                            code: error.code
+                        });
+                    }
                 }
                 break;
 
