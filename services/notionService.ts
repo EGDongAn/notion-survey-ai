@@ -99,8 +99,8 @@ export const createNotionSurveyDatabase = async (
             title: {}
         },
         'Submitted At': {
-            type: 'date',
-            date: {}
+            type: 'created_time',
+            created_time: {}
         },
         'Email': {
             type: 'email',
@@ -120,31 +120,37 @@ export const createNotionSurveyDatabase = async (
         
         console.log('Creating Notion database with parent page:', formattedPageId);
         
+        const requestBody = {
+            parent: {
+                type: 'page_id',
+                page_id: formattedPageId
+            },
+            title: [
+                {
+                    type: 'text',
+                    text: {
+                        content: title
+                    }
+                }
+            ],
+            properties: properties
+        };
+        
+        console.log('Request body:', JSON.stringify(requestBody, null, 2));
+        
         // Make API call to create database
         const response = await fetch(`${NOTION_API_URL}?path=databases`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                parent: {
-                    type: 'page_id',
-                    page_id: formattedPageId
-                },
-                title: [
-                    {
-                        type: 'text',
-                        text: {
-                            content: title
-                        }
-                    }
-                ],
-                properties: properties
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to create Notion database: ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({ error: response.statusText }));
+            console.error('Notion API error response:', errorData);
+            throw new Error(`Failed to create Notion database: ${errorData.error || response.statusText}`);
         }
 
         const data = await response.json();
