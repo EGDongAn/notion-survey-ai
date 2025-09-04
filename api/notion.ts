@@ -76,11 +76,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             return res.status(400).json({
                                 error: `Validation error: ${error.message}`
                             });
+                        } else if (error.code === 'duplicate_property_name') {
+                            return res.status(400).json({
+                                error: 'A database with the same name already exists. Try with a different name or the system will add a timestamp automatically.'
+                            });
+                        } else if (error.message?.includes('duplicate')) {
+                            return res.status(409).json({
+                                error: 'Database name conflict. The system will automatically add a timestamp to make it unique.'
+                            });
                         }
                         
                         return res.status(500).json({
                             error: error.message || 'Failed to create database',
-                            code: error.code
+                            code: error.code,
+                            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
                         });
                     }
                 }

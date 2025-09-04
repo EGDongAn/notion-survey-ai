@@ -79,7 +79,16 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
     setError(null);
 
     try {
-      const formTitle = draftName || `[${category}] ${topic}`;
+      // Add timestamp to make names unique
+      const timestamp = new Date().toLocaleString('ko-KR', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }).replace(/[:\s\/]/g, '');
+      
+      const baseTitle = draftName || `[${category}] ${topic}`;
+      const formTitle = `${baseTitle} (${timestamp})`;
       
       // Check if we're in development without proper backend
       if (window.location.hostname === 'localhost' && !window.location.port.includes('3000')) {
@@ -117,10 +126,14 @@ const NotionFormGenerator: React.FC<NotionFormGeneratorProps> = ({ setActiveView
       // Provide more helpful error messages
       if (errorMessage.includes('500') || errorMessage.includes('API key not configured')) {
         setError('Notion API is not configured. Please ensure NOTION_API_KEY is set in Vercel environment variables.');
+      } else if (errorMessage.includes('duplicate') || errorMessage.includes('409')) {
+        setError('A survey with this name already exists. The system has automatically added a timestamp to make it unique. Please try again.');
       } else if (errorMessage.includes('400')) {
-        setError('Invalid request. Please check that VITE_NOTION_DATABASE_ID is a valid Notion page ID and the page is shared with your integration.');
+        setError('Invalid request. Please check that your Notion page ID is valid and the page is shared with your integration.');
       } else if (errorMessage.includes('403')) {
         setError('Permission denied. Please ensure your Notion integration has access to the parent page.');
+      } else if (errorMessage.includes('404')) {
+        setError('Parent page not found. Please check that the page exists and is shared with your integration.');
       } else {
         setError(errorMessage);
       }
