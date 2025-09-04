@@ -1,9 +1,3 @@
-export interface Env {
-  NOTION_API_KEY: string;
-  NOTION_PARENT_PAGE_ID: string;
-  NOTION_VERSION?: string;
-}
-
 // CORS headers for browser requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,15 +6,15 @@ const corsHeaders = {
 };
 
 // Handle OPTIONS requests for CORS
-export const onRequestOptions: PagesFunction<Env> = async () => {
+export async function onRequestOptions() {
   return new Response(null, {
     status: 200,
     headers: corsHeaders,
   });
-};
+}
 
 // Handle GET requests
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const path = url.searchParams.get('path');
@@ -34,7 +28,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         hasNotionKey: !!env.NOTION_API_KEY,
         hasParentId: !!env.NOTION_PARENT_PAGE_ID,
         hasVersion: !!env.NOTION_VERSION,
-        notionVersion: env.NOTION_VERSION || '2022-06-28'
+        notionVersion: env.NOTION_VERSION || '2022-06-28',
+        // Debug info
+        envVarCount: Object.keys(env).length,
+        envKeys: Object.keys(env).filter(k => !k.toLowerCase().includes('key') && !k.toLowerCase().includes('secret'))
       },
       timestamp: new Date().toISOString()
     }), {
@@ -50,7 +47,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   if (!env.NOTION_API_KEY) {
     return new Response(JSON.stringify({
       error: 'Notion API key not configured',
-      debug: 'Set NOTION_API_KEY in environment variables'
+      debug: 'Set NOTION_API_KEY in Cloudflare Pages environment variables',
+      availableKeys: Object.keys(env).length
     }), { 
       status: 500,
       headers: {
@@ -99,28 +97,29 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       },
     });
   }
-};
+}
 
 // Handle POST requests
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export async function onRequestPost(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const path = url.searchParams.get('path');
   const databaseId = url.searchParams.get('databaseId');
 
-  // Debug: Log environment variable status
-  console.log('Environment check:', {
-    hasNotionKey: !!env.NOTION_API_KEY,
+  // Debug logging
+  console.log('POST request:', {
+    path,
+    hasApiKey: !!env.NOTION_API_KEY,
     hasParentId: !!env.NOTION_PARENT_PAGE_ID,
-    hasVersion: !!env.NOTION_VERSION,
-    path: path
+    envKeys: Object.keys(env)
   });
 
   // Check environment variables
   if (!env.NOTION_API_KEY) {
     return new Response(JSON.stringify({ 
       error: 'Notion API key not configured',
-      debug: 'Please set NOTION_API_KEY in Cloudflare Pages environment variables'
+      debug: 'Please set NOTION_API_KEY in Cloudflare Pages environment variables',
+      hint: 'Make sure to add it in Settings > Environment variables > Production'
     }), { 
       status: 500,
       headers: {
@@ -154,13 +153,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         // Create a new database
         notionUrl += 'databases';
         // Ensure parent is set correctly
+        const parentPageId = env.NOTION_PARENT_PAGE_ID.replace(/-/g, '');
         requestBody = {
           ...body,
           parent: body.parent || {
             type: 'page_id',
-            page_id: env.NOTION_PARENT_PAGE_ID.replace(/-/g, '')
+            page_id: parentPageId
           }
         };
+        console.log('Creating database with parent:', parentPageId);
         break;
         
       case 'pages':
@@ -186,7 +187,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         });
     }
 
-    console.log(`Notion API Request: ${notionUrl}`, JSON.stringify(requestBody, null, 2));
+    console.log(`Calling Notion API: ${notionUrl}`);
 
     const response = await fetch(notionUrl, {
       method: 'POST',
@@ -201,7 +202,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const data = await response.text();
     
     if (!response.ok) {
-      console.error('Notion API error response:', data);
+      console.error('Notion API error:', {
+        status: response.status,
+        data: data
+      });
     }
 
     return new Response(data, {
@@ -212,8 +216,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       },
     });
   } catch (error) {
-    console.error('Notion API error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    console.error('Function error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      details: error.message 
+    }), {
       status: 500,
       headers: {
         ...corsHeaders,
@@ -221,10 +228,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       },
     });
   }
-};
+}
 
 // Handle PATCH requests
-export const onRequestPatch: PagesFunction<Env> = async (context) => {
+export async function onRequestPatch(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const databaseId = url.searchParams.get('databaseId');
@@ -273,4 +280,4 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
       },
     });
   }
-};
+}
